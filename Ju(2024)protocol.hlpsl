@@ -1,0 +1,170 @@
+
+role role_U(U:agent,CS:agent,D:agent,Key_set_U_CS:(symmetric_key) set,Key_set_CS_U:(symmetric_key) set,SND,RCV:channel(dy))
+played_by U
+def=
+	local
+		State:nat,IDuj:text,IDcsk:text,PIDuj:text,ECuj:text,TS1:text,M3:text,M1:text,M2:text,V1:text,TS3:text,M6:text,V3:text,Key_3:symmetric_key,Key_1:symmetric_key
+,RPWuj,PWuj,RR3,CERTuj,ECujj,RR4,PIDdri,TIDuj,TIDdri,SK:text
+	init
+		State := 0
+	transition
+		
+		%%% User registration
+		2. State=0 /\ RCV(start) =|> State':=1 
+		/\ RPWuj':=h(IDuj,PWuj) 
+		/\ Key_1':=new() 
+		/\ Key_set_U_CS':=cons(Key_1',Key_set_U_CS) 
+		/\ SND({IDuj}_Key_1')
+
+
+		3. State=1 /\ in(Key_3',Key_set_CS_U) 
+		/\ RCV({PIDuj'.ECuj'.IDcsk}_Key_3') =|> State':=2 
+		/\ Key_set_CS_U':=delete(Key_3',Key_set_CS_U) 
+		/\ RR3':=new()
+		/\ CERTuj':=xor(ECuj',h(RR3',PWuj))
+		
+
+		%% Login and Authentication key Agreement phase
+		/\ ECujj':=xor(CERTuj',h(RR3',PWuj))
+		/\ RR4':=new()
+		/\ TS1':=new()
+		/\ M1':= xor(h(IDcsk,TS1'),PIDuj)
+		/\ M2':= xor(h(PIDuj',ECuj',TS1'),PIDdri)
+		/\ M3':= xor(h(PIDuj',IDcsk,ECuj',TS1'),TIDuj)
+		/\ V1':=h(PIDuj',PIDdri,ECuj',TS1')
+		/\ SND(M1'.M2'.M3'.V1'.TS1')
+		/\ secret(ECujj',sec_ECujj,{U,CS}) 
+		/\ witness(U,CS,u_cs_TS1,TS1')
+
+
+		6. State=2 /\ RCV(M6'.V3'.TS3') =|> State':=3
+		/\ request(U,D,d_u_TS3,TS3')
+		/\ TIDdri':=xor(M6',h(TIDuj,PIDdri,TS3'))
+		/\ SK':= h(TIDuj,TIDdri,TS3')
+end role
+
+
+
+
+
+role role_CS(U:agent,CS:agent,D:agent,Key_set_CS_D:(symmetric_key) set,Key_set_U_CS:(symmetric_key) set,Key_set_CS_U:(symmetric_key) set,SND,RCV:channel(dy))
+played_by CS
+def=
+	local
+		State:nat,RTSdri:text,ECtdri:text,IDdri:text,RR1:text,IDuj:text,IDcsk:text,PIDuj:text,ECuj:text,TS1:text,M3:text,M1:text,M2:text,V1:text,TS2:text,M4:text,V2:text,Key_3:symmetric_key,Key_2:symmetric_key,Key_1:symmetric_key,
+CCdri,PIDdri,ECdri,XXcsk,RR2,RTSuj,ECtuj,IDsck,TIDuj,CRdri,CRtdri:text
+	init
+		State := 0
+	transition
+
+		%% Drone registraion
+		1. State=0 /\ RCV(start) =|> State':=1 
+		/\ RR1':=new()
+		/\ CCdri':=new()
+		/\ RTSdri':=new()
+		/\ PIDdri':=h(IDdri,RTSdri')
+		/\ ECdri':=h(IDdri,XXcsk,RR1',RTSdri')
+		/\ secret(ECdri',sec_ECdri,{CS,D}) 
+		/\ ECtdri':=xor(ECdri',h(XXcsk,RTSdri'))
+		/\ Key_1':=new() 
+		/\ Key_set_CS_D':=cons(Key_1',Key_set_CS_D) 
+		/\ SND({IDdri.CCdri'.ECdri'}_Key_1')
+
+
+		%% Users registration
+		2. State=1 /\ in(Key_2',Key_set_U_CS) 
+		/\ RCV({IDuj}_Key_2') =|> State':=2 
+		/\ Key_set_U_CS':=delete(Key_2',Key_set_U_CS) 			
+		/\ RR2':=new()
+		/\ PIDuj':=h(IDuj,RTSuj,XXcsk)
+		/\ ECuj':=h(PIDuj', RTSuj,RR2',XXcsk)
+		/\ secret(ECuj',sec_ECuj,{CS,U}) 
+		/\ ECtuj':=xor(ECuj,h(XXcsk,RTSuj))
+		/\ Key_3':=new() 
+		/\ Key_set_CS_U':=cons(Key_3',Key_set_CS_U) 
+		/\ SND({PIDuj'.ECuj'.IDcsk}_Key_3')
+
+		%% Login and Authentication key Agreement phase
+		4. State=2 /\ RCV(M1'.M2'.M3'.V1'.TS1') =|> State':=3 
+		/\ request(CS,U,u_cs_TS1,TS1')
+		/\ PIDuj':=xor(M1',h(IDsck,TS1'))
+		/\ ECuj':=xor(ECtuj,h(XXcsk,RTSuj))
+		/\ PIDdri':=xor(M2',h(PIDuj',ECuj',TS1'))
+		/\ TIDuj':=xor(h(PIDuj',IDcsk,ECuj',TS1'),M3)
+		/\ CRdri':= xor(CRtdri,h(XXcsk,RTSdri))
+		/\ TS2':=new()
+		/\ M4':= xor(h(CRdri,PIDdri',TS2'),TIDuj)
+		/\ V2':=h(CRdri,PIDdri',TIDuj,TS2')
+		/\ SND(M4'.V2'.TS2')
+		/\ secret(CRdri',sec_CRdri,{CS,D}) 
+		/\ witness(CS,D,cs_d_TS2,TS2')
+end role
+
+role role_D(U:agent,CS:agent,D:agent,Key_set_CS_D:(symmetric_key) set,SND,RCV:channel(dy))
+played_by D
+def=
+	local
+		State:nat,RTSdri:text,ECtdri:text,IDdri:text,RR1:text,TS2:text,M4:text,V2:text,TS3:text,M6:text,V3:text,Key_1:symmetric_key,
+CCdri,ECdri,CRdri,CERTdri,TIDuj,PIDdri,RR5,TIDdri,SK:text
+	init
+		State := 0
+	transition
+
+		%% Drone registraion
+		1. State=0 /\ in(Key_1',Key_set_CS_D) 
+		/\ RCV({IDdri.CCdri'.ECdri'}_Key_1') =|> State':=1 
+		/\ Key_set_CS_D':=delete(Key_1',Key_set_CS_D)
+		/\ CRdri':=h(CCdri')
+		/\ CERTdri':=xor(ECdri',h(CRdri',IDdri))
+
+		%% Login and Authentication key Agreement phase
+		5. State=1 /\ RCV(M4'.V2'.TS2') =|> State':=2 
+		/\ request(D,CS,cs_d_TS2,TS2')
+		/\ CRdri':= h(CCdri)
+		/\ TIDuj':=xor(M4',h(CRdri',PIDdri,TS2'))
+		/\ RR5':=new()
+		/\ TIDdri':= h(CRdri',RR5',TIDuj')
+		/\ TS3':=new()
+		/\ SK':= h(TIDuj',TIDdri,TS3')
+		/\ M6':=xor(h(TIDuj',PIDdri,TS3'), TIDdri')
+		/\ V3':=h(TIDuj',TIDdri',SK',PIDdri,TS3')
+		/\ SND(M6'.V3'.TS3')
+		/\ witness(D,U,d_u_TS3,TS3')
+end role
+
+role session(U:agent,CS:agent,D:agent,Key_set_CS_U:(symmetric_key) set,Key_set_U_CS:(symmetric_key) set,Key_set_CS_D:(symmetric_key) set)
+def=
+	local
+		SND3,RCV3,SND2,RCV2,SND1,RCV1:channel(dy)
+	composition
+		role_U(U,CS,D,Key_set_U_CS,Key_set_CS_U,SND1,RCV1)
+		/\ role_CS(U,CS,D,Key_set_CS_D,Key_set_U_CS,Key_set_CS_U,SND2,RCV2) 
+		/\ role_D(U,CS,D,Key_set_CS_D,SND3,RCV3)  
+end role
+ 
+role environment()
+def=
+	const
+		users:agent,h:hash_func,drone:agent,server:agent,
+sec_ECdri,sec_ECuj,sec_ECujj,sec_CRdri, u_cs_TS1,d_u_TS3,cs_d_TS2:protocol_id
+	intruder_knowledge = {users,server,drone}
+	composition
+		session(users,server,drone,{},{},{})
+		/\ session(users,server,drone,{},{},{})
+		/\ session(i,server,drone,{},{},{})
+		/\ session(users,i,drone,{},{},{})
+		/\ session(users,server,i,{},{},{})
+end role
+
+goal
+	secrecy_of sec_ECdri % secrecy of Drone's ephemeral credential
+	secrecy_of sec_ECuj % secrecy of User's's ephemeral credential
+	secrecy_of sec_ECujj % secrecy of User's's ephemeral credential
+	secrecy_of sec_CRdri % secrecy of Drone's CRdri
+	authentication_on u_cs_TS1
+	authentication_on cs_d_TS2
+	authentication_on d_u_TS3
+
+end goal
+
+environment()
